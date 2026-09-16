@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Flappy Bird Legends: Poderes & Monstros</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #0f172a, #020617);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      color: #ffffff;
+    }
+
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      max-height: 720px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      border-radius: 20px;
+      overflow: hidden;
+      background: #38bdf8;
+    }
+
+    @media (max-height: 720px) or (max-width: 440px) {
+      .game-wrapper {
+        border-radius: 0;
+        max-height: 100vh;
+      }
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    /* Barra Superior */
+    .top-bar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .top-group {
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .top-btn {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .top-btn:active {
+      transform: scale(0.94);
+    }
+
+    .audio-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Seletor de Skins */
+    .skin-bar {
+      position: absolute;
+      top: 56px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      z-index: 20;
+      pointer-events: auto;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .skin-bar.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px);
+    }
+
+    .skin-pill {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .skin-pill.active {
+      background: #eab308;
+      color: #0f172a;
+      border-color: #fef08a;
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
+    }
+
+    /* HUD de Poderes Ativos */
+    .power-hud {
+      position: absolute;
+      top: 60px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .power-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Botão de Tiro Mobile */
+    .shoot-btn {
+      position: absolute;
+      bottom: 24px;
+      right: 20px;
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      border: 2px solid #fef08a;
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.5);
+      color: white;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      cursor: pointer;
+      z-index: 25;
+      touch-action: manipulation;
+    }
+
+    .shoot-btn span {
+      font-size: 8px;
+      text-transform: uppercase;
+      margin-top: -2px;
+      letter-spacing: 0.5px;
+    }
+
+    .shoot-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Modais */
+    .modal {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 340px;
+      max-height: 85vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      background: #020617;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      font-weight: bold;
+      color: #facc15;
+    }
+
+    .modal-body {
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #1e293b;
+      font-size: 12px;
+    }
+
+    .rank-item strong {
+      color: #facc15;
+    }
+
+    .modal-btn {
+      background: #22c55e;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      margin: 12px;
+    }
+
+    /* Painel de Game Over e Registro de Nome */
+    .gameover-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 86%;
+      max-width: 330px;
+      background: #0f172a;
+      border: 2px solid #f97316;
+      border-radius: 20px;
+      padding: 18px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 30;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+      text-align: center;
+    }
+
+    .gameover-box h2 {
+      font-size: 22px;
+      color: #ef4444;
+      font-weight: 900;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: #1e293b;
+      padding: 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .stats-row strong {
+      display: block;
+      font-size: 18px;
+      color: #facc15;
+    }
+
+    .name-input-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .name-input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: white;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .save-btn {
+      background: #eab308;
+      color: #0f172a;
+      font-weight: bold;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .restart-btn {
+      background: #22c55e;
+      color: white;
+      font-weight: 800;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-wrapper" id="gameWrapper">
+    <!-- Barra Superior -->
+    <div class="top-bar">
+      <div class="top-group">
+        <button class="top-btn" id="rankingBtn">🏆 Ranking</button>
+      </div>
+      <div class="top-group">
+        <button class="top-btn audio-btn" id="audioToggle" title="Ativar/Desativar Som">🔊</button>
+      </div>
+    </div>
+
+    <!-- Seletor de Skins (Aparece no início) -->
+    <div class="skin-bar" id="skinBar">
+      <button class="skin-pill active" data-skin="classic">🐥 Clássico</button>
+      <button class="skin-pill" data-skin="phoenix">🔥 Fênix</button>
+      <button class="skin-pill" data-skin="cyborg">🤖 Ciborgue</button>
+      <button class="skin-pill" data-skin="bat">🦇 Morcego</button>
+    </div>
+
+    <!-- HUD de Poderes Ativos -->
+    <div class="power-hud" id="powerHud"></div>
+
+    <!-- Botão de Tiro Mobile -->
+    <button class="shoot-btn" id="shootBtn">
+      🔥
+      <span>Atirar</span>
+    </button>
+
+    <!-- Canvas do Jogo -->
+    <canvas id="gameCanvas" width="400" height="650"></canvas>
+
+    <!-- Caixa de Game Over / Salvar Ranking -->
+    <div class="gameover-box" id="gameoverBox">
+      <h2>FIM DE JOGO</h2>
+      <div class="stats-row">
+        <div>
+          <span>Pontos</span>
+          <strong id="finalScore">0</strong>
+        </div>
+        <div>
+          <span>Monstros</span>
+          <strong id="finalMonsters">0</strong>
+        </div>
+        <div>
+          <span>Recorde</span>
+          <strong id="finalBest">0</strong>
+        </div>
+      </div>
+
+      <div class="name-input-group" id="nameInputArea">
+        <input type="text" id="playerNameInput" class="name-input" placeholder="Seu apelido" maxlength="15" value="Herói">
+        <button class="save-btn" id="saveScoreBtn">Salvar</button>
+      </div>
+      <div id="savedBadge" style="display:none; color:#22c55e; font-size:12px; font-weight:bold;">
+        ✓ Pontuação salva no Ranking!
+      </div>
+
+      <button class="restart-btn" id="restartBtn">Jogar Novamente ↺</button>
+    </div>
+
+    <!-- Modal Ranking -->
+    <div class="modal" id="rankingModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span>🏆 Placar de Líderes</span>
+          <span style="cursor:pointer;" id="closeModalX">✕</span>
+        </div>
+        <div class="modal-body" id="rankingList"></div>
+        <button class="modal-btn" id="closeModalBtn">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- ÁUDIO PROCEDURAL WEB AUDIO API (SEM ARQUIVOS EXTERNOS) ---
+    class SoundManager {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playJump() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(820, now + 0.12);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+      playScore() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(980, now);
+        osc.frequency.setValueAtTime(1320, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+      playHit() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+      playShoot() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.14);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.14);
+      }
+      playExplosion() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.25);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+      playPowerup() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [440, 554, 659, 880].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const st = now + idx * 0.05;
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, st);
+          gain.gain.setValueAtTime(0.2, st);
+          gain.gain.exponentialRampToValueAtTime(0.01, st + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(st);
+          osc.stop(st + 0.12);
+        });
+      }
+      playShieldBreak() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+    }
+
+    const sound = new SoundManager();
+
+    // Botão de Áudio
+    const audioBtn = document.getElementById('audioToggle');
+    audioBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.muted = !sound.muted;
+      audioBtn.textContent = sound.muted ? '🔇' : '🔊';
+    });
+
+    // --- SISTEMA DE RANKING (LOCALSTORAGE) ---
+    const rankingModal = document.getElementById('rankingModal');
+    const rankingList = document.getElementById('rankingList');
+    const rankingBtn = document.getElementById('rankingBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const closeModalX = document.getElementById('closeModalX');
+
+    const DEFAULT_RANKS = [
+      { name: 'Fênix Lendária', score: 45, monsters: 10 },
+      { name: 'Gavião Mestre', score: 32, monsters: 6 },
+      { name: 'Ciborgue Ágil', score: 24, monsters: 4 },
+      { name: 'Morcego Veloz', score: 18, monsters: 3 },
+      { name: 'Asa de Ouro', score: 12, monsters: 2 }
+    ];
+
+    function getScores() {
+      try {
+        const raw = localStorage.getItem('flappy_legends_ranks');
+        return raw ? JSON.parse(raw) : DEFAULT_RANKS;
+      } catch {
+        return DEFAULT_RANKS;
+      }
+    }
+
+    function saveScore(name, score, monsters) {
+      const current = getScores();
+      current.push({ name: name || 'Herói', score, monsters });
+      current.sort((a, b) => b.score - a.score);
+      const top = current.slice(0, 10);
+      localStorage.setItem('flappy_legends_ranks', JSON.stringify(top));
+      return top;
+    }
+
+    function renderRanking() {
+      const scores = getScores();
+      rankingList.innerHTML = '';
+      scores.forEach((s, idx) => {
+        const item = document.createElement('div');
+        item.className = 'rank-item';
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}º`;
+        item.innerHTML = `
+          <div><strong>${medal}</strong> ${s.name} <small style="color:#94a3b8">(${s.monsters} monstros)</small></div>
+          <div><strong>${s.score}</strong> pts</div>
+        `;
+        rankingList.appendChild(item);
+      });
+    }
+
+    function openRanking() {
+      renderRanking();
+      rankingModal.style.display = 'flex';
+    }
+
+    function closeRanking() {
+      rankingModal.style.display = 'none';
+    }
+
+    rankingBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openRanking();
+    });
+    closeModalBtn.addEventListener('click', closeRanking);
+    closeModalX.addEventListener('click', closeRanking);
+
+    // --- SELEÇÃO DE SKINS ---
+    let currentSkin = 'classic';
+    const skinBar = document.getElementById('skinBar');
+    const skinButtons = document.querySelectorAll('.skin-pill');
+    skinButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        skinButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSkin = btn.getAttribute('data-skin');
+      });
+    });
+
+    // --- CONFIGURAÇÃO DO CANVAS ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const shootBtn = document.getElementById('shootBtn');
+    const powerHud = document.getElementById('powerHud');
+
+    const gameoverBox = document.getElementById('gameoverBox');
+    const finalScore = document.getElementById('finalScore');
+    const finalMonsters = document.getElementById('finalMonsters');
+    const finalBest = document.getElementById('finalBest');
+    const playerNameInput = document.getElementById('playerNameInput');
+    const saveScoreBtn = document.getElementById('saveScoreBtn');
+    const savedBadge = document.getElementById('savedBadge');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const WIDTH = 400;
+    const HEIGHT = 650;
+    const GROUND_HEIGHT = 100;
+    const PLAYABLE_HEIGHT = HEIGHT - GROUND_HEIGHT;
+    const PIPE_WIDTH = 68;
+    const PIPE_GAP = 145;
+
+    let state = 'START';
+    let score = 0;
+    let monstersKilled = 0;
+    let bestScore = parseInt(localStorage.getItem('flappy_best_score') || '0', 10);
+    let frames = 0;
+    let screenShake = 0;
+    let scoreSaved = false;
+
+    // Poderes
+    let hasShield = false;
+    let blasterFrames = 0;
+    let slowMoFrames = 0;
+
+    // Pássaro
+    const bird = {
+      x: 88,
+      y: 280,
+      radius: 16,
+      gravity: 0.38,
+      jump: -7.2,
+      velocity: 0,
+      rotation: 0,
+      wingCycle: 0,
+      reset() {
+        this.y = 280;
+        this.velocity = 0;
+        this.rotation = 0;
+      },
+      flap() {
+        this.velocity = this.jump;
+        sound.playJump();
+        addFeathers(this.x - 8, this.y + 4);
+      },
+      update() {
+        if (state === 'START') {
+          this.wingCycle += 0.15;
+          this.y = 270 + Math.sin(frames * 0.08) * 10;
+          this.rotation = 0;
+          return;
+        }
+
+        const isSlowMo = slowMoFrames > 0;
+        this.velocity += this.gravity * (isSlowMo ? 0.75 : 1);
+        this.y += this.velocity;
+        this.wingCycle += 0.25;
+
+        if (this.velocity < 0) {
+          this.rotation = Math.max(-0.45, this.velocity * 0.08);
+        } else {
+          this.rotation = Math.min(Math.PI / 2, (this.velocity - 2) * 0.12);
+        }
+
+        if (this.y + this.radius >= PLAYABLE_HEIGHT) {
+          this.y = PLAYABLE_HEIGHT - this.radius;
+          triggerGameOver();
+        }
+        if (this.y - this.radius <= 0) {
+          this.y = this.radius;
+          this.velocity = 0;
+        }
+      },
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        const wingY = Math.sin(this.wingCycle) * 5;
+
+        if (currentSkin === 'phoenix') {
+          // Fênix de Fogo
+          ctx.fillStyle = '#ea580c';
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(-2, 4, this.radius * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.ellipse(-7, wingY, 10, 6, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.moveTo(10, -2);
+          ctx.lineTo(22, 2);
+          ctx.lineTo(10, 6);
+          ctx.fill();
+        } else if (currentSkin === 'cyborg') {
+          // Ciborgue Robô
+          ctx.fillStyle = '#64748b';
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Visor Laser Neon
+          ctx.fillStyle = '#06b6d4';
+          ctx.fillRect(2, -7, 14, 6);
+
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.ellipse(-7, wingY, 8, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.beginPath();
+          ctx.moveTo(10, -2);
+          ctx.lineTo(20, 2);
+          ctx.lineTo(10, 6);
+          ctx.fill();
+        } else if (currentSkin === 'bat') {
+          // Morcego
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#475569';
+          ctx.beginPath();
+          ctx.ellipse(-7, wingY, 11, 7, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(6, -4, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.moveTo(10, 2);
+          ctx.lineTo(14, 5);
+          ctx.lineTo(10, 8);
+          ctx.fill();
+        } else {
+          // Clássico
+          ctx.fillStyle = '#facc15';
+          ctx.strokeStyle = '#854d0e';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(-2, 4, this.radius * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#eab308';
+          ctx.beginPath();
+          ctx.ellipse(-7, wingY, 9, 6, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(6, -5, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.arc(8, -5, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.moveTo(10, -1);
+          ctx.lineTo(21, 2);
+          ctx.lineTo(10, 6);
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        // Campo de Força do Escudo
+        if (hasShield) {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius + 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    };
+
+    // Coleções de entidades
+    const pipes = [];
+    const monsters = [];
+    const powerUps = [];
+    const bullets = [];
+    const particles = [];
+    const floatingTexts = [];
+
+    let spawnTimer = 0;
+    let monsterTimer = 0;
+
+    function addFloatingText(x, y, text, color) {
+      floatingTexts.push({ x, y, text, color, life: 1 });
+    }
+
+    function addFeathers(x, y) {
+      for (let i = 0; i < 4; i++) {
+        particles.push({
+          x, y,
+          vx: -(Math.random() * 2 + 1),
+          vy: (Math.random() - 0.5) * 2,
+          size: 3,
+          life: 1,
+          decay: 0.04,
+          color: currentSkin === 'phoenix' ? '#f97316' : currentSkin === 'bat' ? '#475569' : '#fef08a'
+        });
+      }
+    }
+
+    function addExplosion(x, y, color = '#f97316', count = 16) {
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i;
+        const spd = Math.random() * 3 + 1.5;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          size: Math.random() * 4 + 3,
+          life: 1,
+          decay: 0.03,
+          color
+        });
+      }
+    }
+
+    function shoot() {
+      if (state !== 'PLAYING') return;
+      bullets.push({ x: bird.x + 18, y: bird.y, vx: 8.5, radius: 6 });
+      sound.playShoot();
+      addExplosion(bird.x + 18, bird.y, '#f59e0b', 5);
+    }
+
+    shootBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      shoot();
+    });
+
+    function spawnPipe() {
+      const minTop = 60;
+      const maxTop = PLAYABLE_HEIGHT - PIPE_GAP - 60;
+      const topHeight = Math.floor(Math.random() * (maxTop - minTop)) + minTop;
+
+      pipes.push({
+        x: WIDTH,
+        top: topHeight,
+        bottom: PLAYABLE_HEIGHT - (topHeight + PIPE_GAP),
+        passed: false
+      });
+
+      // Chance de poder (45%)
+      if (Math.random() < 0.45) {
+        const types = ['shield', 'blaster', 'slowmo', 'coin'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        powerUps.push({
+          x: WIDTH + PIPE_WIDTH / 2,
+          y: topHeight + PIPE_GAP / 2,
+          type,
+          pulse: 0
+        });
+      }
+    }
+
+    function spawnMonster() {
+      const baseY = Math.floor(Math.random() * (PLAYABLE_HEIGHT - 140)) + 70;
+      monsters.push({
+        x: WIDTH + 20,
+        baseY,
+        y: baseY,
+        vx: 1.8,
+        freq: 0.06,
+        amp: 24,
+        radius: 16,
+        wingAngle: 0
+      });
+    }
+
+    function updatePowerHud() {
+      powerHud.innerHTML = '';
+      if (hasShield) {
+        powerHud.innerHTML += `<div class="power-badge" style="border-color:#38bdf8; color:#38bdf8;">🛡️ Escudo Ativo</div>`;
+      }
+      if (blasterFrames > 0) {
+        const sec = Math.ceil(blasterFrames / 60);
+        powerHud.innerHTML += `<div class="power-badge" style="border-color:#f97316; color:#f97316;">🔥 Canhão (${sec}s)</div>`;
+      }
+      if (slowMoFrames > 0) {
+        const sec = Math.ceil(slowMoFrames / 60);
+        powerHud.innerHTML += `<div class="power-badge" style="border-color:#c084fc; color:#c084fc;">⏳ Câmera Lenta (${sec}s)</div>`;
+      }
+    }
+
+    function triggerGameOver() {
+      if (state === 'GAMEOVER') return;
+      state = 'GAMEOVER';
+      screenShake = 12;
+      sound.playHit();
+      shootBtn.style.display = 'none';
+
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('flappy_best_score', bestScore);
+      }
+
+      finalScore.textContent = score;
+      finalMonsters.textContent = monstersKilled;
+      finalBest.textContent = bestScore;
+      scoreSaved = false;
+      savedBadge.style.display = 'none';
+      nameInputArea.style.display = 'flex';
+      gameoverBox.style.display = 'flex';
+    }
+
+    saveScoreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (scoreSaved) return;
+      const name = playerNameInput.value.trim() || 'Herói';
+      saveScore(name, score, monstersKilled);
+      scoreSaved = true;
+      nameInputArea.style.display = 'none';
+      savedBadge.style.display = 'block';
+    });
+
+    restartBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      resetGame();
+    });
+
+    function resetGame() {
+      gameoverBox.style.display = 'none';
+      bird.reset();
+      pipes.length = 0;
+      monsters.length = 0;
+      powerUps.length = 0;
+      bullets.length = 0;
+      particles.length = 0;
+      floatingTexts.length = 0;
+      hasShield = false;
+      blasterFrames = 0;
+      slowMoFrames = 0;
+      score = 0;
+      monstersKilled = 0;
+      spawnTimer = 0;
+      monsterTimer = 0;
+      state = 'PLAYING';
+      skinBar.classList.add('hidden');
+      shootBtn.style.display = 'flex';
+      bird.flap();
+    }
+
+    // Loop do Canvas a 60 FPS
+    function loop() {
+      frames++;
+      const isSlowMo = slowMoFrames > 0;
+      const speed = isSlowMo ? 1.2 : 2.4;
+
+      if (blasterFrames > 0) blasterFrames--;
+      if (slowMoFrames > 0) slowMoFrames--;
+      updatePowerHud();
+
+      ctx.save();
+      if (screenShake > 0) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        screenShake--;
+      }
+
+      // Céu
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, PLAYABLE_HEIGHT);
+      if (isSlowMo) {
+        skyGrad.addColorStop(0, '#581c87');
+        skyGrad.addColorStop(1, '#7e22ce');
+      } else {
+        skyGrad.addColorStop(0, '#38bdf8');
+        skyGrad.addColorStop(1, '#bae6fd');
+      }
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      if (state === 'PLAYING') {
+        spawnTimer++;
+        if (spawnTimer >= (isSlowMo ? 170 : 100)) {
+          spawnPipe();
+          spawnTimer = 0;
+        }
+
+        monsterTimer++;
+        if (monsterTimer >= (isSlowMo ? 320 : 190)) {
+          spawnMonster();
+          monsterTimer = 0;
+        }
+
+        // Canos
+        for (let i = pipes.length - 1; i >= 0; i--) {
+          const p = pipes[i];
+          p.x -= speed;
+
+          if (!p.passed && p.x + PIPE_WIDTH < bird.x) {
+            p.passed = true;
+            score++;
+            sound.playScore();
+            addFloatingText(bird.x + 10, bird.y - 20, '+1', '#fef08a');
+          }
+
+          if (bird.x + bird.radius - 3 > p.x && bird.x - bird.radius + 3 < p.x + PIPE_WIDTH) {
+            if (bird.y - bird.radius + 3 < p.top || bird.y + bird.radius - 3 > PLAYABLE_HEIGHT - p.bottom) {
+              if (hasShield) {
+                hasShield = false;
+                sound.playShieldBreak();
+                screenShake = 10;
+                addExplosion(bird.x, bird.y, '#38bdf8', 16);
+                p.x = bird.x - PIPE_WIDTH - 5;
+              } else {
+                triggerGameOver();
+              }
+            }
+          }
+
+          if (p.x + PIPE_WIDTH < -10) pipes.splice(i, 1);
+        }
+
+        // Monstros
+        for (let i = monsters.length - 1; i >= 0; i--) {
+          const m = monsters[i];
+          m.x -= m.vx * (isSlowMo ? 0.5 : 1);
+          m.y = m.baseY + Math.sin(frames * m.freq) * m.amp;
+          m.wingAngle += 0.2;
+
+          if (Math.hypot(m.x - bird.x, m.y - bird.y) < m.radius + bird.radius - 4) {
+            if (hasShield) {
+              hasShield = false;
+              sound.playShieldBreak();
+              addExplosion(m.x, m.y, '#ef4444', 16);
+              monsters.splice(i, 1);
+              continue;
+            } else {
+              triggerGameOver();
+            }
+          }
+
+          if (m.x < -30) monsters.splice(i, 1);
+        }
+
+        // Poderes
+        for (let i = powerUps.length - 1; i >= 0; i--) {
+          const pu = powerUps[i];
+          pu.x -= speed;
+          pu.pulse += 0.08;
+
+          if (Math.hypot(pu.x - bird.x, pu.y - bird.y) < bird.radius + 16) {
+            if (pu.type === 'shield') {
+              hasShield = true;
+              addFloatingText(bird.x, bird.y - 25, '🛡️ ESCUDO!', '#38bdf8');
+            } else if (pu.type === 'blaster') {
+              blasterFrames = 60 * 12;
+              addFloatingText(bird.x, bird.y - 25, '🔥 TIROS!', '#f97316');
+            } else if (pu.type === 'slowmo') {
+              slowMoFrames = 60 * 8;
+              addFloatingText(bird.x, bird.y - 25, '⏳ CÂMERA LENTA!', '#c084fc');
+            } else if (pu.type === 'coin') {
+              score += 3;
+              addFloatingText(bird.x, bird.y - 25, '+3 PONTOS!', '#facc15');
+            }
+            sound.playPowerup();
+            powerUps.splice(i, 1);
+            continue;
+          }
+
+          if (pu.x < -20) powerUps.splice(i, 1);
+        }
+
+        // Tiros de Fogo
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const b = bullets[i];
+          b.x += b.vx;
+
+          let hit = false;
+          for (let j = monsters.length - 1; j >= 0; j--) {
+            const m = monsters[j];
+            if (Math.hypot(b.x - m.x, b.y - m.y) < b.radius + m.radius) {
+              sound.playExplosion();
+              addExplosion(m.x, m.y, '#ef4444', 20);
+              addFloatingText(m.x, m.y - 20, '+2 MONSTRO!', '#f97316');
+              score += 2;
+              monstersKilled++;
+              monsters.splice(j, 1);
+              hit = true;
+              break;
+            }
+          }
+
+          if (hit || b.x > WIDTH + 20) bullets.splice(i, 1);
+        }
+      }
+
+      // Desenho dos Canos
+      for (const p of pipes) {
+        ctx.fillStyle = '#65a30d';
+        ctx.strokeStyle = '#14532d';
+        ctx.lineWidth = 2.5;
+
+        // Superior
+        ctx.fillRect(p.x, 0, PIPE_WIDTH, p.top);
+        ctx.strokeRect(p.x, 0, PIPE_WIDTH, p.top);
+
+        // Inferior
+        const by = PLAYABLE_HEIGHT - p.bottom;
+        ctx.fillRect(p.x, by, PIPE_WIDTH, p.bottom);
+        ctx.strokeRect(p.x, by, PIPE_WIDTH, p.bottom);
+      }
+
+      // Desenho dos Poderes
+      for (const pu of powerUps) {
+        ctx.save();
+        ctx.translate(pu.x, pu.y + Math.sin(pu.pulse) * 5);
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const icon = pu.type === 'shield' ? '🛡️' : pu.type === 'blaster' ? '🔥' : pu.type === 'slowmo' ? '⏳' : '⭐';
+        ctx.fillText(icon, 0, 0);
+        ctx.restore();
+      }
+
+      // Desenho dos Monstros
+      for (const m of monsters) {
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.fillStyle = '#6b21a8';
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        const wingY = Math.sin(m.wingAngle) * 10;
+        ctx.fillStyle = '#4c1d95';
+        ctx.fillRect(-22, wingY - 4, 12, 8);
+        ctx.fillRect(10, wingY - 4, 12, 8);
+
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(-4, -2, 2.5, 0, Math.PI * 2);
+        ctx.arc(4, -2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Desenho dos Tiros
+      for (const b of bullets) {
+        ctx.save();
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Desenho do Chão
+      ctx.fillStyle = '#84cc16';
+      ctx.fillRect(0, PLAYABLE_HEIGHT, WIDTH, 14);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(0, PLAYABLE_HEIGHT + 14, WIDTH, GROUND_HEIGHT - 14);
+
+      // Partículas
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.life -= pt.decay;
+        if (pt.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = pt.life;
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Textos Flutuantes
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 1;
+        ft.life -= 0.02;
+        if (ft.life <= 0) {
+          floatingTexts.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = ft.life;
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      bird.update();
+      bird.draw();
+
+      // Placar
+      if (state === 'PLAYING') {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.font = '900 44px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 6;
+        ctx.strokeText(score, WIDTH / 2, 75);
+        ctx.fillText(score, WIDTH / 2, 75);
+        ctx.restore();
+      } else if (state === 'START') {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.font = '900 36px sans-serif';
+        ctx.fillStyle = '#facc15';
+        ctx.strokeStyle = '#713f12';
+        ctx.lineWidth = 6;
+        ctx.strokeText('FLAPPY LEGENDS', WIDTH / 2, 170);
+        ctx.fillText('FLAPPY LEGENDS', WIDTH / 2, 170);
+
+        ctx.font = '700 16px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('TOQUE OU ESPAÇO PARA VOAR', WIDTH / 2, 400);
+
+        ctx.font = '600 13px sans-serif';
+        ctx.fillStyle = '#bae6fd';
+        ctx.fillText('Tecla X ou botão 🔥 para Atirar!', WIDTH / 2, 428);
+        ctx.restore();
+      }
+
+      ctx.restore();
+      requestAnimationFrame(loop);
+    }
+
+    // Controles
+    function handleAction() {
+      if (state === 'START') {
+        state = 'PLAYING';
+        skinBar.classList.add('hidden');
+        shootBtn.style.display = 'flex';
+        bird.flap();
+      } else if (state === 'PLAYING') {
+        bird.flap();
+      }
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handleAction();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        handleAction();
+      } else if (e.code === 'KeyX' || e.code === 'KeyF' || e.code === 'ShiftLeft') {
+        e.preventDefault();
+        shoot();
+      }
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
